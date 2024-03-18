@@ -1,21 +1,17 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+library(knitr)
 
+library(ggplot2)
+library(lubridate)
 
-## Loading and preprocessing the data
-
-```{r}
-
-setwd("D:\\argor\\Documents\\RepData_PeerAssessment\\RepData_PeerAssessment1")
 getwd()
 
+##Upload the file
 
-activity <- read.csv("D:\\argor\\Documents\\RepData_PeerAssessment\\RepData_PeerAssessment1\\activity\\activity.csv")
+activity <- read.csv("D:\\argor\\Documents\\
+                     RepData_PeerAssessment\\RepData_PeerAssessment1
+                     \\activity\\activity.csv")
 
+##Convert dates and intervals into datetime
 
 activity2 <- sprintf("%04d", activity$interval)
 activity3 <- format(strptime(activity2, format="%H%M"), format = "%H:%M")
@@ -35,17 +31,7 @@ stepdata$time <- format(stepdata$datetime, "%H:%M:%S")
 
 steps <- stepdata[, c("steps", "date", "time")]
 
-```
-
-This will create the necessary data sets we will use to answer every question, 
-namely `steps` and `stepdata`.
-
-### Creating a Histogram with Processed data
-
-`ggplot2` and `scales` will be integral to creating a plot with x-axis ticks
-that don't blend into themselves.
-
-```{r}
+ ##Plotting a histogram of processed data
 
 library(ggplot2)
 library(scales)
@@ -61,69 +47,32 @@ ggplot(steps, aes(x=date, y=steps)) +
   scale_y_continuous(breaks = seq(0, 30000, 2000)) +
   theme(axis.text.x = element_text(angle = 90)) 
 
-```
+##Calculating Mean and Median number of steps taken each day
 
-## What is mean total number of steps taken per day?
-
-```{r}
 library(dplyr)
-library(knitr)
 
 steps_avg_med = steps %>%
   group_by(date) %>%
   summarise(avg_steps = mean(steps, na.rm = TRUE),
             med_steps = median(steps, na.rm = TRUE))
 
-kable(steps_avg_med, caption = "Mean and Median Number of Steps Taken Per Day")
+table(steps_avg_med)
 
-```
+##Creating a Time Series Plot
 
-
-## What is the average daily activity pattern?
-
-This section will be split into two sections:
-
-1.A Time Series Plot of Steps Taken
-2.A Table of how the average amount of steps per 5 minute interval
-
-### Time Series Plot of Steps Taken
-
-`stepdata` will be very useful specifically for the time series plot.
-
-```{r}
 plot(stepdata$datetime, stepdata$steps, xlab="Date and Time",
      ylab="Steps Taken", type="n", main = "Time Series of Steps Taken")
 lines(stepdata$datetime, stepdata$steps)
 
-```
+##Five Minute Interval with most average steps
 
-### Average Amount of Steps Taken Per Five Minute Interval
-
-```{r}
 library(dplyr)
-library(knitr)
 
 steps_avg_time = steps %>%
   group_by(time) %>%
   summarise(avg_steps = mean(steps, na.rm = TRUE))
 
-kable(steps_avg_time, caption = "Average Amount of Steps Per 5min Interval")
-
-```
-
-as `steps_avg_time` shows, the 5 minute interval with the highest amount of
-average steps is **8:35:00** at an average of 206 steps.
-
-## Imputing missing values
-
-### Substituting NA Values
-
-The strategy I used for replacing missing values was by substituting them with
-the mean number of steps taken using a `for` loop
-
-```{r}
-
-library(knitr)
+##Strategy for Replacing NA Values with overall mean number of steps
 
 newsteps = steps
 
@@ -131,11 +80,8 @@ for(i in 1:ncol(newsteps)){
   newsteps[is.na(newsteps[,i]), i] <- mean(newsteps[,i], na.rm = TRUE)
 }
 
-```
+##Creating Histogram of total steps with NA values replaced
 
-### Creating Histogram of Total Steps per Day with NA values substituted
-
-```{r}
 library(ggplot2)
 
 ggplot(newsteps, aes(x=date, y=steps)) +
@@ -149,14 +95,10 @@ ggplot(newsteps, aes(x=date, y=steps)) +
   scale_y_continuous(breaks = seq(0, 30000, 2000)) +
   theme(axis.text.x = element_text(angle = 90)) 
 
-```
+##Panel Plot of 5 minute intervals of weekdays vs weekends
 
-## Are there differences in activity patterns between weekdays and weekends?
-
-To show the differences in activity between weekdays and weekends, I created
-two data sets; one filtered for weekdays and the other filtered for weekends.
-
-```{r}
+library(ggplot2)
+library(gridExtra)
 
 endsteps = steps %>%
   filter(date == "2012-10-06" | date == "2012-10-07" | date == "2012-10-13" 
@@ -181,22 +123,14 @@ midsteps = steps %>%
   group_by(time) %>%
   summarise(avg_steps = mean(steps, na.rm = TRUE))
 
-```
 
-After creating these two data sets I plotted them using `ggplot2` and 
-`gridExtra`.
-
-```{r}
-
-library(ggplot2)
-library(gridExtra)
 
 g1 <- ggplot(midsteps, aes(x=time, y=avg_steps, group = 1)) +
   geom_line() +
   geom_point() +
   xlab("Time (5 minute intervals)") +
-  ylab("Average Number of Steps Taken (weekday)") +
-  ggtitle("Average Number of Steps Taken Weekdays") +
+  ylab("Average Number of Steps Taken") +
+  ggtitle("Average Number of Steps Taken by Interval during Weekdays") +
   theme_bw() +
   theme(axis.text.x = element_blank())
 
@@ -204,13 +138,10 @@ g2 <- ggplot(endsteps, aes(x=time, y=avg_steps, group = 1)) +
   geom_line() +
   geom_point() +
   xlab("Time (5 minute intervals)") +
-  ylab("Average Number of Steps Taken (weekend)") +
-  ggtitle("Average Number of steps Taken Weekends") +
+  ylab("Average Number of Steps Taken") +
+  ggtitle("Average Number of steps Taken by Interval during Weekends") +
   theme_bw() +
   theme(axis.text.x = element_blank())
 
 grid.arrange(g1, g2, nrow = 1)
-
-```
-
 
